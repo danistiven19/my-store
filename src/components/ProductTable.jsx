@@ -1,18 +1,25 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Table from 'react-bootstrap/Table';
 import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
 import Row from 'react-bootstrap/Row';
+import Form from 'react-bootstrap/Form';
 
 import AddProduct from './AddProduct';
-import {  selectFilteredProducts } from '../redux/product.selector';
+import {  selectFilteredProducts, selectSelectedProducts, selectProducts } from '../redux/product.selector';
+import {  cleanCart, selectProduct } from '../redux/product.action';
 import { groupBy } from '../utils/utilities';
 import RowCategory from './RowCategory';
 import RowProduct from './Row';
 
 const ProductTable = (props) => {
-  const renderProductTable = (products) => {
+  const allProducts = useSelector(selectProducts);
+  const products = useSelector(selectFilteredProducts);
+  const selectedProductIds = useSelector(selectSelectedProducts);
+  const dispatch = useDispatch();
+
+  const renderProductTable = () => {
     const productByCategory = groupBy(products, 'category');
     const categories = Object.keys(productByCategory) || [];
     const rows = [];
@@ -20,7 +27,9 @@ const ProductTable = (props) => {
       const categoryId = 'category_'+indexCategory;
       rows.push(<RowCategory category={category} key={categoryId} />);
       productByCategory[category].forEach((product, index) => {
-        rows.push(<RowProduct product={product} key={categoryId+'_product_'+index} />);
+        const currentProduct = { ...product };
+        currentProduct.selected = selectedProductIds.indexOf(currentProduct.id) >= 0;
+        rows.push(<RowProduct product={currentProduct} key={categoryId+'_product_'+index} />);
       });
     });
 
@@ -28,8 +37,6 @@ const ProductTable = (props) => {
   };
 
   const renderProductSection = (props) => {
-    const products = useSelector(selectFilteredProducts);
-
     if (!products || !products.length) {
       return (
         <Card className="text-center">
@@ -42,11 +49,25 @@ const ProductTable = (props) => {
       );
     }
 
+    const handleSelectAllChange = (event) => {
+      if (!event.target.checked) {
+        return dispatch(cleanCart());
+      }
+
+      dispatch(selectProduct(getStockedProducts().map(product => product.id)));
+    };
+
+    const getStockedProducts = () => {
+      return allProducts.filter((product) => product.stocked);
+    };
 
     return (
+      <>
+      <Form.Check checked={getStockedProducts().length === selectedProductIds.length} label="Select All" onChange={handleSelectAllChange} />
       <Table>
         <thead>
           <tr>
+            <th></th>
             <th>Name</th>
             <th>Price</th>
             <th>Description</th>
@@ -54,14 +75,20 @@ const ProductTable = (props) => {
           </tr>
         </thead>
         <tbody>
-          {renderProductTable(products)}
+          {renderProductTable()}
         </tbody>
       </Table>
+      </>
     );
   };
 
   return (
     <>
+    <Row className="text-right mb-2">
+        <Col>
+          <AddProduct />
+        </Col>
+      </Row>
       {renderProductSection(props)}
       <Row className="text-center mt-2">
         <Col>

@@ -7,13 +7,14 @@ const containsText = (product, searchText) => {
     (price || '').toLowerCase().includes(textField);
 };
 
-export const selectProducts = (state) => state && state.products;
+export const selectProducts = (state) => [...state && state.products];
+
+export const selectSelectedProducts = (state) => [...state && state.selectedProductIds];
 
 export const selectFilteredProducts = (state) => {
   const { products, filters } = state;
-  console.log(filters.text);
   
-  return products.filter((product) => (
+  return [...products].filter((product) => (
     (filters.includeStockedOnly ? product.stocked : !filters.includeStockedOnly) &&
     containsText(product, filters.text)
   )

@@ -35,30 +35,28 @@ export const productReducer = (state = initialState, action) => {
         appData: { ...state.appData, isLoading: false, errorMessage: action.payload }
       };
 
-    case ADD_PRODUCT: 
+    case ADD_PRODUCT:
+    const product = {...action.payload, stocked: action.payload.stocked || action.payload.quantity > 0 };
       return {
         ...state,
         appData: { ...state.appData, isLoading: false },
-        products: [...state.products, action.payload]
+        products: [...state.products, product]
       };
 
     case SELECT_PRODUCT:
-      const selectedProductId = action.payload;
-      if (state.selectedProductIds.indexOf(selectedProductId) <= -1) {
-        return {
-          ...state,
-          selectedProductIds: [ ...state.selectedProductIds, selectedProductId]
-        };
-      }
-
-      return { ...state };
+      const selectedProductId = Array.isArray(action.payload) ? action.payload : [action.payload];
+      return {
+        ...state,
+        selectedProductIds: [ ...new Set([ ...state.selectedProductIds, ...selectedProductId])]
+      };
 
     case UNSELECT_PRODUCT:
       const unselectedProductPosition = state.selectedProductIds.indexOf(action.payload);
       if (unselectedProductPosition > -1) {
+        state.selectedProductIds.splice(unselectedProductPosition, 1);
         return {
           ...state,
-          selectedProductIds: [...state.selectedProductIds.splice(unselectedProductPosition, 1)]
+          selectedProductIds: [...state.selectedProductIds]
         };
       }
 
@@ -89,6 +87,6 @@ export const productReducer = (state = initialState, action) => {
       };
 
     default:
-      return state;
+      return {...state};
   }
 };
